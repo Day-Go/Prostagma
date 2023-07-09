@@ -1,6 +1,7 @@
 import os
 from sqlalchemy import create_engine, MetaData, Table
 from sqlalchemy.orm import sessionmaker
+from contextlib import contextmanager
 
 from ..models import *
 
@@ -25,29 +26,54 @@ class DataAccess:
         table = Table(table_name, self.metadata, autoload_with=self.engine)
         return table
 
+    @contextmanager
     def get_session(self):
         # get a new Session object to interact with the database
         Session = sessionmaker(bind=self.engine)
-        return Session()
+        session = Session()
+        try:
+            yield session
+        finally:
+            session.close()
+
     
+    def _get_civ_property(self, civ: str, property: str):
+        with self.get_session() as session:
+            result = getattr(session.query(Civilization)
+                                   .where(Civilization.name == civ)
+                                   .first(), property)
+        return result
+
+    def get_civ_type(self, civ: str):
+        return self._get_civ_property(civ, 'type')
+
     def get_civ_bonuses(self, civ: str):
-        session = self.get_session()
-        return session.query(Civilization).where(
-            Civilization.name == civ).first().bonuses
+        return self._get_civ_property(civ, 'bonuses')
+
+    def get_civ_unique_units(self, civ: str):
+        return self._get_civ_property(civ, 'unique_units')
+
+    def get_civ_unique_techs(self, civ: str):
+        return self._get_civ_property(civ, 'unique_techs')
+
+    def get_civ_team_bonus(self, civ: str):
+        return self._get_civ_property(civ, 'team_bonus')
+    
     
     def check_unit_availability(self, civ: str, unit: str):
-        session = self.get_session()
+        with self.session as session:
+            id = session.query(Civilization).where(
+                    Civilization.name == civ).first().id
+            
+            unit_id = session.query(Unit).where(
+                    Unit.name == unit).first().id
 
-        id = session.query(Civilization).where(
-                Civilization.name == civ).first().id
-        
-        unit_id = session.query(Unit).where(
-                Unit.name == unit).first().id
-
-        # Check whether the join table, civilization_unit, contains a row
-        # with the given civilization and unit ids
-        result = session.query(civilization_unit).where(
-                        civilization_unit.c.civilization_id == id).where(
-                        civilization_unit.c.unit_id == unit_id).count() > 0
+            # Check whether the join table, civilization_unit, contains a row
+            # with the given civilization and unit ids
+            result = session.query(civilization_unit).where(
+                            civilization_unit.c.civilization_id == id).where(
+                            civilization_unit.c.unit_id == unit_id).count() > 0
 
         return str(result)
+    
+
