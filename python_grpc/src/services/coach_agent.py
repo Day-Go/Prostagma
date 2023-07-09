@@ -4,11 +4,11 @@ import json
 
 from .data_access import DataAccess
 
-class Agent:
+class CoachAgent:
     def __init__(self):
         self.data_access = DataAccess('aoe.db')
         
-        self.key = os.environ.get('OPENAI_API_KEY')  # get OpenAI API key from environment variable
+        self.key = os.environ.get('OPENAI_API_KEY')
         openai.api_key = self.key
 
         self.model = 'gpt-3.5-turbo-0613'

@@ -30,10 +30,10 @@ class DataAccess:
         Session = sessionmaker(bind=self.engine)
         return Session()
     
-    def get_civ_description(self, civ: str):
+    def get_civ_bonuses(self, civ: str):
         session = self.get_session()
         return session.query(Civilization).where(
-            Civilization.name == civ).first().desc
+            Civilization.name == civ).first().bonuses
     
     def check_unit_availability(self, civ: str, unit: str):
         session = self.get_session()
