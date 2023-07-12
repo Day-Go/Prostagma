@@ -1,32 +1,33 @@
 from pynput import keyboard
 
-class Listener(keyboard.Listener):
+class Listener:
     def __init__(self, recorder):
-        super().__init__(on_press = self.on_press, on_release = self.on_release)
         self.recorder = recorder
+        self.listener = keyboard.Listener(on_press=self.on_press, on_release=self.on_release)
+        self.is_running = False
     
     def on_press(self, key):
-        if key is None: #unknown event
+        if key is None:  # unknown event
             pass
-        elif isinstance(key, keyboard.Key): #special key event
-            if key.space:
+        elif isinstance(key, keyboard.Key):  # special key event
+            if key == keyboard.Key.ctrl_l:
                 self.recorder.start()
-        elif isinstance(key, keyboard.KeyCode): #alphanumeric key event
-            if key.char == 'q': #press q to quit
-                if self.recorder.recording:
-                    self.recorder.stop()
-                return False #this is how you stop the listener thread
+        elif isinstance(key, keyboard.KeyCode):  # Alphanumeric key event
+            if key.char == 'q':
+                self.recorder.stop()
+                self.listener.stop()  
+                self.is_running = False
+                return False 
                 
     def on_release(self, key):
-        if key is None: #unknown event
+        if key is None:  # unknown event
             pass
-        elif isinstance(key, keyboard.Key): #special key event
+        elif isinstance(key, keyboard.Key):  # special key event
             if key.ctrl:
                 self.recorder.stop()
-        elif isinstance(key, keyboard.KeyCode): #alphanumeric key event
+        elif isinstance(key, keyboard.KeyCode):  # alphanumeric key event
             pass
 
     def start_keyboard_listener(self):
-        # put your keyboard listener logic here
-        with keyboard.Listener(on_press=self.on_press, on_release=self.on_release) as listener:
-            listener.join()
+        self.listener.start()
+        self.is_running = True
